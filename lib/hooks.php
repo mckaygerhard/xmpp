@@ -2,15 +2,20 @@
 
 class OC_User_xmpp_Hooks {
 	static public function createXmppSession($params){
-		$xmpplogin=new OC_xmpp_login($params['uid'],OCP\Config::getAppValue('xmpp', 'xmppDefaultDomain',''),$params['password'],OCP\Config::getAppValue('xmpp', 'xmppBOSHURL',''));
+		if(strpos($params['uid'],'@')===false){
+			$xmpplogin=new OC_xmpp_login($params['uid'],OCP\Config::getAppValue('xmpp', 'xmppDefaultDomain',''),$params['password'],OCP\Config::getAppValue('xmpp', 'xmppBOSHURL',''));
+		}else{
+			$xmpplogin=new OC_xmpp_login($username,$domain,$params['password'],OCP\Config::getAppValue('xmpp', 'xmppBOSHURL',''));
+		}
 		$xmpplogin->doLogin();
                 
-		$stmt = OCP\DB::prepare('SELECT ocUser FROM *PREFIX*xmpp WHERE ocUser = "'.$params['uid'].'"');
+		#$stmt = OCP\DB::prepare('SELECT ocUser FROM *PREFIX*xmpp WHERE ocUser = "'.$params['uid'].'"');
+		$stmt = OCP\DB::prepare('SELECT ocUser FROM *PREFIX*xmpp WHERE ocUser = "'.OCP\User::getUser().'"');
                 $result = $stmt->execute();
                 if($result->numRows()!=0){
 			OC_User_xmpp_Hooks::deleteXmppSession();
                 }
-                $stmt = OCP\DB::prepare('INSERT INTO *PREFIX*xmpp (ocUser,jid,rid,sid) VALUES ("'.$params['uid'].'","'.$xmpplogin->jid.'","'.$xmpplogin->rid.'","'.$xmpplogin->sid.'")');
+                $stmt = OCP\DB::prepare('INSERT INTO *PREFIX*xmpp (ocUser,jid,rid,sid) VALUES ("'.OCP\User::getUser().'","'.$xmpplogin->jid.'","'.$xmpplogin->rid.'","'.$xmpplogin->sid.'")');
                 $result=$stmt->execute();
 
 	}
@@ -18,14 +23,6 @@ class OC_User_xmpp_Hooks {
 	static public function deleteXmppSession(){
 		$stmt = OCP\DB::prepare('DELETE FROM *PREFIX*xmpp WHERE ocUser = "'.OCP\User::getUser().'"');
 		$stmt->execute();
-	}
-
-	static public function createXmppUser($info){
-		system('sudo /usr/sbin/ejabberdctl register '.$info['uid'].' '.OCP\Config::getAppValue('xmpp', 'xmppDefaultDomain','').' '.$info['password']);
-	}
-
-	static public function updateXmppUserPassword($info){
-		system('sudo /usr/sbin/ejabberdctl change_password '.$info['uid'].' '.OCP\Config::getAppValue('xmpp', 'xmppDefaultDomain','').' '.$info['password']);
 	}
 
 	static public function post_updateVCard($id){
@@ -43,7 +40,7 @@ class OC_User_xmpp_Hooks {
 		}
 		if($email!=''){
 			$xmpplogin=new OC_xmpp_login(OCP\Config::getAppValue('xmpp', 'xmppAdminUser',''),OCP\Config::getAppValue('xmpp', 'xmppDefaultDomain',''),OCP\Config::getAppValue('xmpp', 'xmppAdminPasswd',''),OCP\Config::getAppValue('xmpp', 'xmppBOSHURL',''));	
-			$xuser=$xmpplogin->doLogin(OC_USER::getUser().'@'.OCP\Config::getAppValue('xmpp', 'xmppDefaultDomain',''));
+			$xuser=$xmpplogin->doLogin(OC_USER::getUser());
 
 			$xuser->addRoster($email,$name);
 			$xmpplogin->logout();
