@@ -5,6 +5,7 @@ class OC_User_xmpp_Hooks {
 		if(strpos($params['uid'],'@')===false){
 			$xmpplogin=new OC_xmpp_login($params['uid'],OCP\Config::getAppValue('xmpp', 'xmppDefaultDomain',''),$params['password'],OCP\Config::getAppValue('xmpp', 'xmppBOSHURL',''));
 		}else{
+			list($username,$domain)=explode('@',$params['uid']);
 			$xmpplogin=new OC_xmpp_login($username,$domain,$params['password'],OCP\Config::getAppValue('xmpp', 'xmppBOSHURL',''));
 		}
 		$xmpplogin->doLogin();
